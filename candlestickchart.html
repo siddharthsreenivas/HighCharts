@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width,initial-scale=1.0,maximum-scale=1.0,minimum-scale=1.0"
+    />
+    <title>Candlestick Charts</title>
+    <script
+      type="text/javascript"
+      src="https://unpkg.com/lightweight-charts/dist/lightweight-charts.standalone.production.js"
+    ></script>
+    <style>
+      body {
+        padding: 0;
+        margin: 0;
+        font-family: Arial, Helvetica, sans-serif;
+      }
+      .container{
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        text-align: center;
+        align-items: center;
+      }
+      #chart{
+        box-shadow: 5px 5px 10px rgb(167, 165, 165);
+        width: 60%;
+        height: 60vh;
+        position: relative;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="container">
+      <h1 style="font-family: 'Times New Roman';">Candlestick Charts</h1>
+      <div id="chart"></div>
+    </div>
+    
+    <script type="text/javascript">
+
+      const url = './data.json';
+
+      fetch(url)
+        .then(response => {
+          if (!response.ok) {
+            throw new Error('Could not fetch the data');
+          }
+          return response.json();
+        })
+        .then(data => {
+          const candleStickData = data;
+          
+        // })
+        // .catch(error => {
+        //   console.error('There was a problem with the fetch operation:', error);
+        // });      
+      
+        // console.log(jsonData);
+
+      const chart = LightweightCharts.createChart(
+        document.getElementById('chart'));
+
+      chart.applyOptions({
+    // hide the grid lines
+    // grid: {
+    //     vertLines: {
+    //         visible: false,
+    //     },
+    //     horzLines: {
+    //         visible: false,
+    //     },
+    // },
+});
+
+      // Generate sample data to use within a candlestick series
+      // const candleStickData = generateCandlestickData();
+      // const candleStickData = jsonData
+
+      const lineData = candleStickData.map(data => ({
+        time: data.time,
+        value: (data.close + data.open) / 2
+        // value: data.close
+      }))
+
+      function calculateMovingAverageSeriesData(candleData, maLength) {
+      const maData = [];
+
+      for (let i = 0; i < candleData.length; i++) {
+        if (i < maLength) {
+            // Provide whitespace data points until the MA can be calculated
+            maData.push({ time: candleData[i].time });
+        } else {
+            let sum = 0;
+            for (let j = 0; j < maLength; j++) {
+                sum += candleData[i - j].close;
+            }
+            const maValue = sum / maLength;
+            maData.push({ time: candleData[i].time, value: maValue });
+        }
+      }
+      return maData;
+      }
+
+      const maData = calculateMovingAverageSeriesData(candleStickData, 20);
+
+      // MovingAverageLine
+      const maSeries = chart.addLineSeries({ color: '#2962FF', lineWidth: 1 });
+      maSeries.setData(maData);
+
+      //CandleStick
+      const mainSeries = chart.addCandlestickSeries();
+      mainSeries.setData(candleStickData);
+
+      // AreaChart
+      const lineSeries = chart.addAreaSeries();
+      lineSeries.setData(lineData);
+
+      //volume chart
+      const VolumeData = candleStickData.map(data => ({
+        time: data.time,
+        value: (data.close) * 40000
+      }))
+
+      const volumeSeries = chart.addHistogramSeries({
+      color: '#26a69a',
+      priceFormat: {
+          type: 'volume',
+      },
+      priceScaleId: '', // set as an overlay by setting a blank priceScaleId
+      scaleMargins: {
+          top: 0.7, // highest point of the series will be 70% away from the top
+          bottom: 0,
+      },
+      });
+
+      volumeSeries.priceScale().applyOptions({
+          scaleMargins: {
+              top: 0.9, // highest point of the series will be 70% away from the top
+              bottom: 0,
+          },
+      });
+
+      volumeSeries.setData(VolumeData)
+
+
+      //tooltip
+      const container =  document.getElementById('chart')
+
+      const toolTipWidth = 80;
+      const toolTipHeight = 80;
+      const toolTipMargin = 15;
+
+      const toolTip = document.createElement('div');
+      toolTip.style = `width: 96px; height: 50px; position: absolute; display: none; padding: 8px; box-sizing: border-box; font-size: 12px; text-align: center; z-index: 10; top:12px; left:12px; pointer-events: none; border: 1px solid; border-radius: 2px;font-family: -apple-system, BlinkMacSystemFont, 'Trebuchet MS', Roboto, Ubuntu, sans-serif; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale;`;
+      toolTip.style.background = 'white';
+      toolTip.style.color = 'black';
+      toolTip.style.borderColor = 'rgba( 38, 166, 154, 1)';
+      container.appendChild(toolTip);
+
+      chart.subscribeCrosshairMove(param => {
+    if (
+        param.point === undefined ||
+        !param.time ||
+        param.point.x < 0 ||
+        param.point.x > chart.clientWidth ||
+        param.point.y < 0 ||
+        param.point.y > chart.clientHeight
+    ) {
+        toolTip.style.display = 'none';
+    } else {
+        toolTip.style.display = 'block';
+        const data = param.seriesData.get(mainSeries);
+        const price = data.close;
+        toolTip.innerHTML = `<div style="font-size: 20px; margin: 4px 0px; color: 'black';">${price} </div>`;
+
+        toolTip.style.left = param.point.x + 'px';
+        toolTip.style.top = param.point.y + 'px';
+    }
+});
+
+
+      window.addEventListener("resize", () => {
+        chart.resize(window.innerWidth, window.innerHeight);
+      });
+
+    })
+    .catch(error => {
+    console.error('There was a problem with the fetch operation:', error);
+    }); 
+
+
+    </script>
+  </body>
+</html>

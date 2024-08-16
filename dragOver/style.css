@@ -1,0 +1,58 @@
+#container{
+    width: 75%;
+    height: max-content;
+    margin: auto;
+    margin-top: 50px;
+    padding: 5px 100px;
+    position: relative;
+}
+#profitLossDispay{
+    display: none;
+    gap: 10px;
+    border-radius: 6px;
+    padding: 3px 10px;
+    width: fit-content;
+    position: absolute;
+    top: 155px;
+    left: 480px;
+    font-size: 18px;
+}
+.profit{
+    border: 1px solid rgb(9, 172, 9);
+    background-color: rgba(118, 233, 52, 0.219);
+    color: rgb(9, 172, 9);
+}
+.profit  i {
+    transform: rotateX(360deg);
+    transition: transform 0.5s ease-in-out;
+}
+.profit .profitLossDate{
+    color: green;
+}
+.loss{
+    border: 1px solid red;
+    background-color: rgba(216, 36, 36, 0.178);
+    color: red;
+    
+}
+.loss .profitLossDate{
+    color: red;
+}
+.loss  i {
+    transform: rotateX(180deg);
+    transition:  transform 0.5s ease-in-out;
+}  
+.highcharts-selection-marker{
+    fill: rgba(0, 128, 0, 0.123);
+ }
+
+ @media (max-width: 1270px) {
+    #container{
+        width: 100%;
+        padding: auto;
+    }
+    #profitLossDispay{
+        left: 400px;
+    }
+    
+ }
